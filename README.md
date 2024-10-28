@@ -1,5 +1,6 @@
 # Sistema peer-to-peer
 *Autora: Celia Patricio Ferrer.*
+*Fecha: 12 / 05 / 2024*
 
 Este documento recoge todas las decisiones que se han llevado a cabo, así como las funcionalidades que se han desarrollado para cubrir todos los aspectos de este sistema de ficheros.
 
@@ -25,7 +26,8 @@ Este documento recoge todas las decisiones que se han llevado a cabo, así como 
     - [Servidor](#53-implementación-del-servidor)
     - [RPC](#54-implementación-del-sistema-rpc)
 - [Pruebas realizadas](#6-pruebas-realizadas)
-- [Conclusiones](#7-conclusiones)
+    - [Secuencia](#61-servicio-secuencial)
+    - [Concurrente](#62-servicio-concurrente)
 
 ---
 ---
@@ -36,8 +38,7 @@ Esta práctica tiene como objetivo global desarrollar un sistema *peer-to-peer* 
 
 En la primera parte del proyecto, se incluye la comunicación de procesos usando sockets TCP. Para ellos, se desarrolla una aplicación de distribuicón de ficheros entre clientes.
 
-Mientras que, la segunda parte se centra 
-en los principales conceptos relacionados con las llamadas a procedimientos remotos y los servicios web.
+Mientras que, la segunda parte se centra en los principales conceptos relacionados con las llamadas a procedimientos remotos y los servicios web.
 
 ---
 ---
@@ -447,8 +448,6 @@ Para validar la capacidad de funcionamiento concurrente del sistema, se realizar
 Para esta prueba, se configuró el servidor en un sistema operativo Ubuntu, mientras que el cliente se ejecutaba en MacOS. Esta configuración permitió evaluar el funcionamiento del sistema entre diferentes sistemas operativos. Los resultados de las pruebas fueron positivos, demostrando que el sistema puede manejar eficientemente múltiples solicitudes concurrentes sin errores.
 
 Además de probar todas las funcionalidades con el servidor, se realizó una prueba adicional para evaluar la capacidad del sistema para manejar el intercambio de archivos entre dos clientes, uno en Ubuntu y otro en MacOS. Esta prueba fue un éxito, lo que demuestra que el sistema puede facilitar el intercambio de archivos entre diferentes sistemas operativos de manera eficiente.
-
-Se añaden unas capturas de pantalla en las que se demuestra el funcionamiento de este sistema, adjuntadas en la carpeta llamada *img*.
 
 ---
 ---
