@@ -156,7 +156,7 @@ Si un cliente quiere realizar una publicación de un archivo, debe introducir el
 
 ```sh
 PUBLISH <filename> <description>
-````
+```
 
 Donde *filename* es el nombre del archivo y *description* una breve descripción del fichero a publicar. Para la realización de esta operación, es necesario que el usuario previamente esté conectado al sistema. 
 
