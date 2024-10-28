@@ -443,6 +443,8 @@ En primer lugar, en esta parte se recogen las pruebas realizadas para la comprob
     | Obtener un fichero de un usuario remoto que no está en el sistema.  | `REGISTER USER` <br> `CONNECT USER` <br> `GET_FILE NO no-existe.txt here.txt` | Se recibe un error debido a que no fue posible conectarse con un usuario que no está en el sistema. |
     | Obtener un fichero de un usuario remoto que no existe.  | `REGISTER USER` <br> `CONNECT USER` <br> `GET_FILE OTRO no-existe.txt here.txt` | Se obtiene que el fichero no existe. |
 
+---
+
 ### 6.2. Servicio concurrente
 
 Para validar la capacidad de funcionamiento concurrente del sistema, se realizaron pruebas integrales que implicaban dos operaciones simultáneas en dos sistemas operativos diferentes. Específicamente, se probó el escenario en el que dos clientes solicitan diferentes operaciones al mismo tiempo, cada uno operando en una máquina distinta.
@@ -451,5 +453,3 @@ Para esta prueba, se configuró el servidor en un sistema operativo Ubuntu, mien
 
 Además de probar todas las funcionalidades con el servidor, se realizó una prueba adicional para evaluar la capacidad del sistema para manejar el intercambio de archivos entre dos clientes, uno en Ubuntu y otro en MacOS. Esta prueba fue un éxito, lo que demuestra que el sistema puede facilitar el intercambio de archivos entre diferentes sistemas operativos de manera eficiente.
 
----
----
