@@ -254,43 +254,201 @@ De forma general, el sistema internamente al leer una operación en el intérpre
 
 4.  Publicación de un fichero.
     
-    asd
+    Al realizar esta operación, el sistema internamente verifica que el *filename* sea válido (una longitud menor a 256 caracteres). Luego, procede a conectarse al servidor y envía la operación, que incluye el comando, la fecha y hora y el nombre del usuario conectado, el nombre y la descripción del fichero, a través del socket al servidor. Una vez que recibe la respuesta, verifica cuál ha sido. Dependiendo de esto, imprime por pantalla si la publicación del fichero se realizó con éxito, si el usuario no existe o si no está conectado previamente, si el fichero ya está publicado o si se produjo cualquier otro problema.
 
 5. Eliminación de un fichero.
     
-    asd
+    En esta operación, el sistema también verifica que el *filename* sea válido. Luego, procede a conectarse al servidor y envía la operación (el comando, la fecha y hora y el nombre del usuario conectado y el nombre del fichero a eliminar). Una vez que recibe la respuesta, verifica cuál ha sido. Imprime por pantalla si la eliminación del fichero se completó con éxito, si el usuario no está previamente registrado o conectado, si el fichero no está publicado o si se produjo otro error.
 
 6. Listado de usuarios conectados.
     
-    asd
+    Al recibir esta operación, el sistema procede a conectarse al servidor para enviar la operación. Esta está formada por el comando, la fecha y hora y el nombre del usuario conectado. Una vez que recibe la respuesta, verifica cuál ha sido. Dependiendo de esto, imprime por pantalla si se produjo un problema, si el usuario que lo ha solicitado no existe o no está conectado o si se produjo o no otro problema. Si se consigue el éxito, se imprime la lista de usuarios conectados. Además, se actualiza el atributo con el diccionario de los usuarios que actualmente están conectados.
 
 7. Listado de publicaciones de un usuario.
     
-    asd
+    Al realizar esto, el sistema internamente verifica que el nombre haya sido escrito correctamente. A continuación, procede a conectarse al servidor y envía la operación, que incluye el comando, la fecha y hora, el nombre del usuario conectado y el nombre de usuario remoto. Una vez que recibe la respuesta, verifica cuál ha sido e imprime por pantalla si el listado se completó con éxito, si el usuario no está registrado o no está conectado al siste, si usuario remoto no existe o si se produjo cualquier otro error. En caso de tener éxito, se muestra el listado con todas las publicaciones que tiene dicho usuario.
 
 8. Desconexión de un usuario.
     
-    asd
+    Al realizar esta operación, el sistema verifica que el nombre se haya escrito correctamente. A continuación, procede a conectarse y envía la operación (el comando, la fecha y hora y el nombre de usuario), a través del socket al servidor. Una vez que recibe la respuesta, verifica cuál ha sido. Dependiendo de esto, imprime por pantalla si la desconexión se completó con éxito, si el usuario previamento no está registrado o conectado o si se produjo un problema.
 
 9. Transferencia de un fichero.
 
-    asd
+    Un prerequisito de esta operación es hacer un *LIST_CONTENT*, debido a que como se pide que esta funcionalidad sea independiente del servidor. Para ello, se debe obtener con anterioridad los usuarios conectados al sistema sin necesidad de solicitarselo al servidor. Tras realizar esta operación, internamente el sistema realizará un diccionario con todos los usuarios conectados y sus direcciones correspondientes, para posteriormente acceder a ello con facilidad.
 
+    Al realizar esta operación, el sistema internamente verifica que todos los campos sean válidos. Tras esto, el sistema se conecta a la dirección del cliente remoto. Depués, envía la operación (el comando, el nombre del usuario remoto, el nombre del fichero remoto y el nombre del fichero local), a través del socket al cliente remoto. Una vez que recibe la respuesta, verifica cuál ha sido. Dependiendo de esto, imprime por pantalla si la obtención se realizó con éxito, si el fichero no existe o si se produjo otro error.
+    
+    Cabe mencionar que este nuevo fichero obtenido, no se ha incluido en el listado de ficheros ya que no se considera una publicación. Además, que esta función debe ser independiente del servidor.
 
+10. Otros métodos.
+
+    Para la recepción de la respuesta, se ha implementado *readline*. Esta función recibe un socket, del cual se desea leer un mensaje. Realiza un bucle while mientras que lee caracteres distintos al de terminación “\0” y devuelve el mensaje leido.
+
+    Para el servicio web, se ha implementado otra función que se llama *getdatetime*. La función *getdatetime()* se utiliza para obtener la fecha y hora actuales. Para hacer esto, se conecta a un servicio web, utilizando el protocolo SOAP. Una vez establecida la conexión, llama al método *get_datetime()* del servicio web, que devuelve la fecha y hora actuales. Si ocurre algún error durante este proceso, se captura la excepción y se imprime el mensaje de error correspondiente.
+
+---
 
 ### 5.2. Implementación del servicio web.
 
+Este componente implementa un servicio web que utiliza el protocolo SOAP para proporcionar la fecha y hora actuales. Representa al servidor, se define una clase *DateTimeService* que tiene un método *get_datetime*. Este método se define como un procedimiento remoto y devuelve la fecha y la hora actuales en formato de cadena. Con el objetivo principal de proporcionar la fecha y hora actuales cada vez que se le envía una solicitud al servidor C.
 
+---
 
 ### 5.3. Implementación del servidor.
 
+Este otro componente del sistema actúa como servidor del sistema distribuido. Se trata de un servidor concurrente que permite la recepción de varias peticiones, las trata y hace lo correspondiente y devuelve la respuesta. En primer lugar, se declaran las variables globales entre las que encontramos: el descriptor del socket principal y una variable de control, el mutex y las variables condicionales para sincronizar los hilos. Esta implementación hace uso de *server–impl.h*.
 
+La función principal del sistema (*main*) verifica la línea de comandos y configura los atributos del hilo. Crea un socket con *SO_REUSEADDR* para reutilizar la dirección tras cerrarlo, configura la dirección IP y el puerto del servidor, y enlaza el socket a estos. Inicia la escucha para aceptar conexiones y muestra un mensaje de inicialización del servicio. Configura una señal para manejar la interrupción *SIGINT* y cerrar el servidor. Finalmente, inicia un bucle infinito para aceptar conexiones de clientes, creando un nuevo descriptor de socket y un nuevo hilo para cada conexión.
+
+La función *cierre* se lleva a cabo al recibir la señal de "ctrl+c" y lleva a cabo el fin del servicio. Para ello, vacia la base de datos, destruye los mutex y las variables condición necesarias, cierra el descriptor del socket y cierra el programa con el valor de éxito 0.
+
+La función *tratar_petición* se encarga de procesar cada petición recibida del cliente. En primer lugar, copia de forma atómica el descriptor del socket recibido en una variable local para su posterior procesamiento. Luego se lee la operación y se declaran todas las variables que van a ser utilizadas. Y dependiendo de la operación obtenida, se realiza un procedimiento diferente.
+
+De forma general, todas las operaciones obtienen el resto de mensajes (entre ellos, el nombre del usuario, la fecha y hora y otros valores necesarios). Posteriormente, llama al procedimiento remoto para que se imprima la operación. Una vez realizado esto, se llama a la operación que se implementa en *server–impl.c*. Dependiendo del resultado que se obtiene, envía un mensaje con el resultado u otro. Finalmente, se cierra el socket local y se termina la ejecución del hilo.
+
+A continuación se describe el componente del sistema que hace uso el servidor para realizar las diferentes operaciones. Es decir, la implementación que se encuentra en el archivo *server–impl.c* y hace uso de *user.h*.
+
+1. Registrar un usuario.
+
+    Esta primera función recibe como parámetros únicamente el nombre del usuario. En primer lugar, crea el usuario con la estructura user e inicializa los valores de cada atributo. Posteriormente, se comprueba si el usuario previamente está registrado en el sistema, si es así, se retorna el valor 1, si no, se realiza el registro.
+
+    Para llevar a cabo el registro en la base de datos, en primer lugar, se abre el fichero *users.dat* que se encuentra en el directorio data. Posteriormente se escribe en bytes la estructura del usuario. Se cierra el fichero de la base de datos. Y se crea el directorio con el nombre del usuario como nombre del directorio.
+
+2. Dar de baja un usuario.
+
+    Al igual que la anterior, esta función recibe como parámetros únicamente el nombre del usuario. En primer lugar, comprueba si el usuario previamente está registrado en el sistema, si no es así, se retorna el valor 1, si no, se realiza la eliminación del usuario en la base de datos.
+
+    Para llevar a cabo esto, se abre el fichero *users.dat*, en modo lectura en bytes, de la misma forma, también se abre otro temporal llamado *temp.dat*. Se procede a leer en usuario en usuario, escribiéndolos en la base de datos temporal menos el usuario deseado. Se cierran ambos ficheros, se elimina el original y se renombra al temporal para que sea el nuevo fichero con la base de datos. Finalmente, también se busca el directorio, cuyo nombre es el nombre del usuario a eliminar, y se elimina.
+
+3. Conectar un usuario.
+
+    Esta otra función recibe como parámetros el nombre del usuario, la dirección IP y el puerto. En primer lugar se intenta obtener el usuario de la base de datos. Para ello, se recorre toda la base de datos comprobando si el nombre coincide con el deseado. En caso de encontrarlo, devuelve dicha estructura, si no, devuelve un *NULL*. Una vez se obtiene el usuario, si el usuario no está registrado (se obtiene un *NULL*), se devuelve el valor 1. Además, también se comprueba que no esté ya conectado, que en cuyo caso, se devuelve el valor 2.
+
+    Posteriormente se actualiza los valores correspondientes de este usuario en la base de datos. Para ello, se abre el fichero users.dat y el fichero temporal. Se leen del fichero original y se escriben en el temporal en usuario en usuario, hasta encontrar el usuario deseado. Una vez es encontrado, se modifican los valores con los valores pasados como parámetros y se cambia la variable de control *conectado* a 1. Finalmente, se cierran ambos ficheros, se elimina el original y se renombra al temporal para que sea el nuevo fichero con la base de datos.
+
+4. Desconectar un usuario.
+
+    Esta otra función recibe como parámetros únicamente el nombre del usuario. En primer lugar se intenta obtener el usuario de la base de datos. Para ello, se recorre toda la base de datos comprobando si el nombre coincide con el deseado. Una vez se obtiene el usuario, si el usuario no está registrado (se obtiene un *NULL*), se devuelve el valor 1. Además, también se comprueba que no esté desconectado y que su valor de control *conectado* sea igual a 1, que en cuyo caso, se devuelve el valor 2.
+
+    Posteriormente, se procede a modificar dicho usuario como conectado. Para ello, se abre el fichero *users.dat* y el fichero temporal. Se leen del fichero original y se escriben en el temporal en usuario en usuario, hasta encontrar el usuario deseado. Una vez es encontrado, se modifican los valores, la variable de control *conectado* se cambia a 0, la dirección IP se cambia a vacío y el puerto a 0. Finalmente, se cierran ambos ficheros, se elimina el original y se renombra al temporal para que sea la base de datos.
+
+5. Publicar un fichero.
+
+    Esta otra función recibe como parámetros el nombre del usuario y el nombre y la descripción del fichero a publicar. Al igual que el anterior, se intenta obtener el usuario de la base de datos. Una vez se obtiene el usuario, si el usuario no está registrado, se devuelve el valor 1. Se comprueba también que esté conectado y que su valor de control conectado sea igual a 1, que en caso de que no sea así, se devuelve el valor 2. Y se comprueba si el archivo ya está publicado, se recorre el array de ficheros y verifica que el nombre coincida con otro que ya exista, en caso de ser así, se devuelve un 3.
+
+    Posteriormente, se procede a realizar la publicación del archivo para ese usuario. Para ello, se abre el fichero *users.dat* y el fichero temporal. Se leen del fichero original y se escriben en el temporal en usuario en usuario, hasta encontrar el usuario deseado. Una vez es encontrado, se modifica el usuario, agregando en el array de ficheros el nuevo fichero junto a su descripción. Finalmente, se cierran ambos ficheros, se elimina el original y se renombra al temporal para que sea la base de datos. Además, se realiza la creación del fichero en el directorio cuyo nombre es el del nombre del usuario.
+
+6. Eliminar un fichero publicado.
+
+    Al igual que el anterior, esta función recibe como parámetros el nombre del usuario y el nombre y la descripción del fichero a publicar. En primer lugar, se intenta obtener el usuario de la base de datos. Una vez se obtiene el usuario, si el usuario no está registrado (se obtiene un *NULL*), se devuelve el valor 1. Se comprueba también que esté conectado y que su valor de control *conectado* sea igual a 1, que en caso de que no sea así, se devuelve el valor 2. Y se comprueba si el archivo está publicado previamente, se recorre el array de ficheros y verifica que el nombre coincida con uno que ya exista, en caso de no ser así, se devuelve un 3.
+
+    A continuación, se procede a realizar la eliminación del archivo. Para ello, se abre el fichero *users.dat* y el fichero temporal. Se leen del fichero original y se escriben en el temporal en usuario en usuario, hasta encontrar el usuario deseado. Una vez encontrado, se elimina del array de ficheros del usuario, el fichero desado y su descripción. Finalmente, se cierran ambos ficheros, se elimina el original y se renombra al temporal para que sea la base de datos. Además, se realiza la eliminación del fichero en el directorio cuyo nombre es el del nombre del usuario.
+
+7. Listar usuarios conectados.
+
+    Esta otra función recibe como parámetros el nombre del usuario conectado que solicita la operación y el puntero a la cadena de caracteres, en donde se va a escribir la lista de los usuarios. Al igual que el anterior, se intenta obtener el usuario de la base de datos. Una vez se obtiene el usuario, si el usuario no está registrado (se obtiene un *NULL*), se devuelve el valor 1. Se comprueba que esté conectado y que su valor de control *conectado* sea igual a 1. Y en caso de que no sea así, se devuelve el valor 2.
+
+    Posteriormente si no se produjo ningún error, se procede a realizar la obtención del listado de todos los usuarios conectados al sistema. En primer lugar, se obtiene el número de usuarios conectados. En segundo lugar, se obtiene el listado con los nombres, las direcciones ip y los puertos de los usuarios conectados. Para ello, se abre el fichero *users.dat*. Se leen todos los usuarios y si su variable de control *conectado* es igual a 1, se añaden a la cadena de caracteres con la lista de usuarios conectados. Finalmente se cierra el fichero y se retorna la lista.
+
+8. Listar publicaciones de un usuario.
+
+    Esta otra función recibe como parámetros el nombre del usuario conectado que solicita la operación, el nombre del usuario remoto y el puntero a la cadena de caracteres, en donde se va a escribir la lista de los ficheros. Al igual que el anterior, se intenta obtener el usuario de la base de datos. Una vez se obtiene el usuario, si el usuario no está registrado (se obtiene un *NULL*), se devuelve el valor -1. Se comprueba que esté previamente conectado y que su valor de control *conectado* sea igual a 1. Y en caso de que no sea así, se devuelve el valor -2.
+
+    Posteriormente si no se produjo ningún error, se procede a realizar la obtención del listado. En primer lugar, se obtiene el usuario remoto, en caso de que no esté registrado, se retorna el valor -3. Si no, se lee todos los ficheros publicados y se concatenan en el puntero a la lista de ficheros. Finalmente se devuelve el valor del número de ficheros.
+
+9. Otras funciones.
+
+    En esta sección se describen otras funciones utilizadas para la gestión de la base de datos. La función *print_usuarios* se recorre toda la base de datos e imprime cada usuario junto a sus atributos. La función *iniciar_base_datos* esta función crea el fichero de la base de datos en modo binaro. Y la función *eliminar_base_datos* elimina el fichero de la base de datos, junto a los directorios de los usuarios que hayan sido creados. Estas dos últimas son de utilidad, ya que cada vez que se inicia nuevamente el servidor, se reinicia la base de datos.
+
+10. RPC imprimir.
+
+    Esta última función es la que realiza la llamada al procedimiento remoto actuando como cliente. Crea el cliente para el RPC y la estructura de la operación, dando los valores correspondientes que recibe como parámetros. Realiza la llamada al procedimiento remoto para que imprima la operación por pantalla, pasando la estructura como argumento. En caso de error, se muestra por pantalla. Finalmente, cierra el cliente y retorna el valor de 0 para indicar el éxito.
+
+---
 
 ### 5.4. Implementación del sistema RPC.
 
+Para llevar a cabo la utilización de RPC, en primer lugar, se tuvo que definir la interfaz de servicio (*operacion.x*), definir la única operación de imprimir la operación y la estructura para pasar los argumentos necesarios. Posteriormente, se utilizó un compilador para generar los archivos que se encargan de las comunicaciones y se usó el comando:
+
+```sh
+rpcgen -NMa tupla.x
+```
+
+Tras realizar esto, se generan los siguientes archivos:
+- *operacion.h* encabezado con las definiciones incluidas en la definición de la interfaz. Este es el archivo compartido que se incluye tanto en el servidor como en el cliente (el servidor del sistema distribuido *peer–to–peer*).
+- *operacion_xdr.c* contiene las rutinas de serialización y deserialización necesarias para convertir los datos en un formato que pueda ser transmitido a través de la red.
+- *operacion_svc.c* incluye la implementación del servidor RPC, contiene la lógica para procesar las peticiones RPC entrantes.
+- *operacion_clnt.c* incluye la implementación del cliente RPC (en este caso, claves), proporciona las funciones necesarias para realizar las llamadas a los procedimientos remotos al servidor.
+- *operacion_server.c* incluye la implementación del servidor RPC para recibir las peticiones.
+
+Cuando el servidor RPC recibe la petición de imprimir_operación, obtiene los valores correspondientes de la estructura pasada como parámetro. Comprueba si el valor del fichero es distinto a vacío. En cuyo caso se trata de una operación que no requiere poner dicho atributo, y en caso contrario, se añade. Finalmente, imprime el mensaje de esta manera: `<user_name> <operacion> <datetime>`
+
+---
+
+### 5.5. Implementación de *lines*.
+
+Este código es correspondiente para el envío y la recepción de mensajes a través de sockets TCP. Contiene las funciones fundamentales *recvMessage* y *sendMessage* implementadas para recibir y enviar mensajes a través de la red de manera eficiente. Además, también se tratan los posibles errores que puedan dar al leer o al escribir dichos mensajes y se garantiza la integridad de la comunicación. Los mensajes se leen de carácter en carácter hasta encontrar el caracter de terminación “\0” y se escriben tal cual ya que se proporciona el tamaño del mensaje.
+
+---
+---
 
 ## 6. Pruebas realizadas
 
+### 6.1. Servicio secuencial
 
+En primer lugar, en esta parte se recogen las pruebas realizadas para la comprobación del funcionamiento secuencial del sistema. Se omiten las pruebas realizadas por el parser debido a que esto es porporcionado y no aporta funcionalidad en el sistema.
 
-## 7. Conclusiones
+1. <u>Operaciones cliente-servidor que se deben realizar con éxito</u>, además de poder ver reflejado dichas operaciones en la base de datos.
+
+    | Caso | Comandos utilizados | Respuesta obtenida |
+    | ----------- | :----------- | :-----------: |
+    | Registrar un usuario que no exista.  | `REGISTER USER` | Se recibe la respuesta OK. Se crea un directorio con nombre del usuario y se guarda en la base de datos. Se imprime en el servidor RPC la instrucción. |
+    | Conectar a un usuario registrado. | `REGISTER USER` <br> `CONNECT USER` | Se recibe la respuesta OK. Se actualiza la base de datos. Se imprime en el servidor RPC la instrucción. |
+    | Desconectar a un usuario registrado y conectado. | `REGISTER USER` <br> `CONNECT USER`  <br> `DISCONNECT USER` | Se recibe la respuesta OK. Se actualiza la base de datos. Se imprime en el servidor RPC la instrucción. |
+    | Publicar un fichero con un usuario registrado y conectado. | `REGISTER USER` <br> `CONNECT USER`  <br> `PUBLISH file.txt Esta es la descripción del fichero.` | Se recibe la respuesta OK. Se crea un fichero con el nombre en el directorio del usuario conectado y se actualiza la base de datos. Se imprime en el servidor RPC la instrucción. |
+    | Eliminar un fichero con un usuario registrado y conectado. | `REGISTER USER` <br> `CONNECT USER` <br> `PUBLISH file.txt Esta es la descripción del fichero.` <br> `DELETE file.txt` | Se recibe la respuesta OK. Se elimina el fichero con el nombre en el directorio del usuario conectado y se actualiza la base de datos. Se imprime en el servidor RPC la instrucción. |
+    | Listar a los usuarios conectados con un usuario registrado y conectado. | `REGISTER USER` <br> `CONNECT USER`  <br> `LIST_USERS` | Se recibe la respuesta OK. Se muestra la lista de usuarios conectados y se actualiza el diccionario con los usuarios conectados. Se imprime en el servidor RPC la instrucción. |
+    | Listar el contenido de un usuario que exista con un usuario registrado y conectado. | `REGISTER USER` <br> `REGISTER OTRO` <br> `CONNECT USER`  <br> `LIST_CONTENT OTRO` | Se recibe la respuesta OK. Se muestra la lista de los fichero publicados por ese usuario. Se imprime en el servidor RPC la instrucción. |
+
+2. <u>Operaciones cliente-servidor que deben dar fallo</u> y no modificar la base de datos.
+
+    | Caso | Comandos utilizados | Respuesta obtenida |
+    | ----------- | :----------- | :-----------: |
+    | Registrar un usuario que exista.  | `REGISTER USER` <br> `REGISTER USER` | Se recibe que el nombre de usuario ya está en uso. No me crea un nuevo directorio con este nombre y no se guarda en la base de datos nuevamente. Se imprime en el servidor RPC la instrucción. |
+    | Conectar a un usuario no registrado. | `CONNECT USER` | Se recibe que el usuario no existe, no está registrado. No se actualiza la base de datos. Se imprime en el servidor RPC la instrucción. |
+    | Conectar a un usuario que ya está conectado. Debe ser en terminales distintas. | `REGISTER USER` <br> `CONNECT USER` <br> <br> `CONNECT USER` | Se recibe que el usuario ya está conectado. No se actualiza la base de datos. Se imprime en el servidor RPC la instrucción. |
+    | Conectar a dos usuarios distintos en una misma terminal. | `REGISTER USER` <br> `REGISTER OTRO` <br> `CONNECT USER`  <br> `CONNECT OTRO` | Se recibe un error ya que solo un usuario puede estar conectado a una terminal. No se actualiza la base de datos. No se imprime en el servidor RPC la instrucción. |
+    | Desconectar a un usuario que no esté registrado. | `DISCONNECT USER` | Descripción. |
+    | Desconectar a un usuario que no esté conectado. | `REGISTER USER` <br> `DISCONNECT USER` | Se recibe que el usuario no está conectado. No se actualiza la base de datos. Se imprime en el servidor RPC la instrucción. |
+    | Publicar un fichero con un usuario no registrado. | `PUBLISH file.txt No se publica.` | Se recibe que el usuario no existe, no está registrado. No se actualiza la base de datos. Se imprime en el servidor RPC la instrucción. |
+    | Publicar un fichero con un usuario no conectado. | `REGISTER USER` <br> `CONNECT USER` <br> `DISCONNECT USER` <br> `PUBLISH file.txt No se publica.` | Se recibe que el usuario no está conectado. No se actualiza la base de datos. Se imprime en el servidor RPC la instrucción. |
+    | Publicar un fichero que ya ha sido publicado. | `REGISTER USER` <br> `CONNECT USER` <br> `PUBLISH file.txt Esto es una prueba.` <br> `PUBLISH file.txt Esto no se publica.` | Se recibe que el fichero ya ha sido publicado. No se modifica la base de datos. Se imprime en el servidor RPC la instrucción. |
+    | Borrar un fichero con un usuario no registrado. | `DELETE file.txt` | Se recibe que el usuario no existe, no está registrado. No se actualiza la base de datos. Se imprime en el servidor RPC la instrucción. |
+    | Borrar un fichero con un usuario no conectado. | `REGISTER USER` <br> `CONNECT USER` <br> `PUBLISH file.txt Descripción.` <br> `DISCONNECT USER` <br> `DELETE file.txt` | Se recibe que el usuario no está conectado. No se actualiza la base de datos. Se imprime en el servidor RPC la instrucción. |
+    | Borrar un fichero que no existe. | `REGISTER USER` <br> `CONNECT USER` <br> `DELETE no-existe-file.txt` | Se recibe que el fichero no está publicado. No se actualiza la base de datos. Se imprime en el servidor RPC la instrucción. |
+    | Listar a los usuarios conectados con un usuario no registrado. | `LIST_USERS` | Se recibe que el usuario no existe, no está registrado. No se muestra la lista ni se obtiene el diccionario. |
+    | Listar a los usuarios conectados con un usuario no conectado. | `REGISTER USER` <br> `CONNECT USER` <br> `DISCONNECT USER` <br> `LIST_USERS` | Se recibe que el usuario no está conectado. No se muestra la lista ni se obtiene el diccionario. |
+    | Listar el contenido de un usuario con un usuario no registrado. | `LIST_CONTENT USER` | Se recibe que el usuario no existe, no está registrado. No se muestra la lista del contenido del usuario remoto. |
+    | Listar el contenido de un usuario con un usuario no conectado. | `REGISTER USER` <br> `CONNECT USER` <br> `DISCONNECT USER` <br> `LIST_CONTENT USER` | Se recibe que el usuario no está conectado. No se muestra la lista del contenido del usuario remoto. |
+    | Listar el contenido de un usuario que no está registrado. | `REGISTER USER` <br> `CONNECT USER` <br> `LIST_CONTENT NO` | Se recibe que el usuario remoto no está registrado. No se muestra la lista del contenido del usuario remoto. |
+
+3. <u>Operaciones cliente-cliente.</u>
+
+    | Caso | Comandos utilizados | Respuesta obtenida |
+    | ----------- | :----------- | :-----------: |
+    | Obtener un fichero de un usuario remoto que esté registrado y conectado, con un usuario registrado y conectado. Se necesita dos terminales. Para esta prueba, se ha escrito el contenido de file.txt en el generado por PUBLISH.  | `REGISTER USER` <br> `CONNECT USER` <br> `PUBLISH file.txt Este es el archivo.` <br> <br> `REGISTER OTRO` <br> `CONNECT OTRO` <br> `LIST_USERS` <br> `GET_FILE USER file.txt here.txt` | Se recibe la respuesta OK. Se añade al usuario que solicita el fichero, el nuevo fichero con el contenido. En el servidor, no le llega nada de la operación GET_FILE. |
+    | Obtener un fichero de un usuario remoto que no está en el sistema.  | `REGISTER USER` <br> `CONNECT USER` <br> `GET_FILE NO no-existe.txt here.txt` | Se recibe un error debido a que no fue posible conectarse con un usuario que no está en el sistema. |
+    | Obtener un fichero de un usuario remoto que no existe.  | `REGISTER USER` <br> `CONNECT USER` <br> `GET_FILE OTRO no-existe.txt here.txt` | Se obtiene que el fichero no existe. |
+
+### 6.2. Servicio concurrente
+
+Para validar la capacidad de funcionamiento concurrente del sistema, se realizaron pruebas integrales que implicaban dos operaciones simultáneas en dos sistemas operativos diferentes. Específicamente, se probó el escenario en el que dos clientes solicitan diferentes operaciones al mismo tiempo, cada uno operando en una máquina distinta.
+
+Para esta prueba, se configuró el servidor en un sistema operativo Ubuntu, mientras que el cliente se ejecutaba en MacOS. Esta configuración permitió evaluar el funcionamiento del sistema entre diferentes sistemas operativos. Los resultados de las pruebas fueron positivos, demostrando que el sistema puede manejar eficientemente múltiples solicitudes concurrentes sin errores.
+
+Además de probar todas las funcionalidades con el servidor, se realizó una prueba adicional para evaluar la capacidad del sistema para manejar el intercambio de archivos entre dos clientes, uno en Ubuntu y otro en MacOS. Esta prueba fue un éxito, lo que demuestra que el sistema puede facilitar el intercambio de archivos entre diferentes sistemas operativos de manera eficiente.
+
+Se añaden unas capturas de pantalla en las que se demuestra el funcionamiento de este sistema, adjuntadas en la carpeta llamada *img*.
+
+---
+---
