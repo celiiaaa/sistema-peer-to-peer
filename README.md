@@ -1,5 +1,7 @@
 # Sistema peer-to-peer
+
 *Autora: Celia Patricio Ferrer.*
+
 *Fecha: 12 / 05 / 2024*
 
 Este documento recoge todas las decisiones que se han llevado a cabo, así como las funcionalidades que se han desarrollado para cubrir todos los aspectos de este sistema de ficheros.
